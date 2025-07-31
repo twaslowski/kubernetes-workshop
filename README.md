@@ -16,7 +16,7 @@ Optional, but recommended:
 - [age](https://age-encryption.org/) - a simple, modern and secure file encryption tool.
 - An AWS Account to set up reliable storage for backups, external secrets management, and more (optional).
 
-## Setting up your cluster
+# Setting up your cluster
 
 There are multiple options to set up a Kubernetes cluster. This README will provide you with instructions
 for the following:
@@ -27,11 +27,11 @@ for the following:
 - Setting up k3s with [k3sup](https://github.com/alexellis/k3sup). The most powerful option that will enable you to
   scale to a multi-node cluster on relatively low-end hardware.
 
-### Installation and Cluster Launch
+## Installation and Cluster Launch
 
-#### minikube
+### minikube
 
-**Install (macOS with Homebrew):**
+**1. Install (macOS with Homebrew):**
 
 ```sh
 brew install minikube
@@ -44,9 +44,7 @@ curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
 ```
 
-[Official minikube installation guide](https://minikube.sigs.k8s.io/docs/start/)
-
-**Create the cluster**
+**2. Create the cluster**
 
 ```sh
 minikube start
@@ -58,9 +56,9 @@ This will create and start a single-node Kubernetes cluster locally. Verify that
 kubectl cluster-info
 ```
 
-#### kind
+### kind
 
-**Install (macOS with Homebrew):**
+**1. Install (macOS with Homebrew):**
 
 ```sh
 brew install kind
@@ -74,9 +72,7 @@ chmod +x ./kind
 sudo mv ./kind /usr/local/bin/kind
 ```
 
-[Official kind installation guide](https://kind.sigs.k8s.io/docs/user/quick-start/)
-
-**Create a cluster:**
+**2. Create a cluster:**
 
 ```sh
 kind create cluster --name kind
@@ -88,21 +84,19 @@ This will spin up a Kubernetes cluster in Docker containers. Verify that the clu
 kubectl cluster-info --context kind-kind
 ```
 
-#### k3s with k3sup
+### k3s with k3sup
 
 This guide will cover the installation of k3s on your local machine. For remote setup, refer
 to the official k3sup documentation.
 
-**Install k3sup (macOS/Linux):**
+**1. Install k3sup (macOS/Linux):**
 
 ```sh
 curl -sLS https://get.k3sup.dev | sh
 sudo install k3sup /usr/local/bin/
 ```
 
-[Official k3sup installation guide](https://github.com/alexellis/k3sup#install)
-
-**Create a cluster**
+**2. Create a cluster**
 
 ```sh
 k3sup install --user $USER --ip $IP
@@ -143,4 +137,16 @@ This command will install FluxCD controllers and configure them to sync with you
 For other Git providers or advanced options, see the
 [FluxCD bootstrap documentation](https://fluxcd.io/docs/cmd/flux_bootstrap/).
 
-After bootstrapping, Flux will continuously reconcile your cluster state with your Git repository.
+You can verify that the installation was successful by checking the status of the Flux controllers:
+
+```sh
+flux get all
+# or
+kubectl get pods -n flux-system
+```
+
+Congratulations! Flux will now continuously reconcile your cluster state with your Git repository. Let's add some stuff!
+
+# Adding functionality
+
+...

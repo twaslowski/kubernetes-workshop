@@ -1,0 +1,12 @@
+version: '3'
+tasks:
+  bootstrap-flux:
+    desc: Setup Flux for GitOps and create
+    cmds:
+      - |
+        flux bootstrap github \
+          --owner=$GITHUB_USER \
+          --repository=kubernetes-workshop \
+          --branch=main \
+          --path=clusters/demo \
+          --personal

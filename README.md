@@ -4,17 +4,27 @@ services. After that, you can start adding functionality of your own.
 
 ## Prerequisites
 
-You need the following software installed on your local machine:
+You **need** to perform the following steps before you can follow this guide:
 
-- [kubectl](https://kubernetes.io/docs/tasks/tools/) - the Kubernetes command-line tool.
-- [flux](https://fluxcd.io/docs/installation/) - a tool to manage Kubernetes clusters declaratively.
-- A [GitHub Personal Access Token](https://github.com/settings/tokens) with the `repo` scope to bootstrap FluxCD.
+- Install [kubectl](https://kubernetes.io/docs/tasks/tools/) - the Kubernetes command-line tool.
+- Install [flux](https://fluxcd.io/docs/installation/) - a tool to manage Kubernetes clusters declaratively.
+- Create a [GitHub Personal Access Token](https://github.com/settings/tokens) with the `repo` scope to bootstrap FluxCD.
+- Fork this repository to your own GitHub account. This will be used to store the configuration of your cluster.
 
-Optional, but recommended:
+You also **should** have a rudimentary understanding of Kubernetes concepts such as
+Pods, Deployments, Services, and Namespaces. If you don't, [Section 0](#step-0-understanding-the-problem-statement)
+will cover some of the basics, but you _really_ should check out the Kubernetes documentation or a beginner's guide
+first. 
 
-- [task](https://taskfile.dev/) - a task runner to manage the setup of your cluster.
-- [age](https://age-encryption.org/) - a simple, modern and secure file encryption tool.
-- An AWS Account to set up reliable storage for backups, external secrets management, and more (optional).
+The official tutorial is a great place to start: [Kubernetes Basics](https://kubernetes.io/docs/tutorials/kubernetes-basics).
+
+You **should**, but do not have to, perform the following steps:
+
+- Install [task](https://taskfile.dev/) - this guide provides some convenience commands using Task.
+- Install [age](https://age-encryption.org/) - for sealed secrets management.
+  You can use GPG, but this guide will not cover it.
+- An AWS Account to set up reliable storage for backups, external secrets management.
+  You can also use different cloud providers or a minio instance.
 
 # Setting up your cluster
 
@@ -110,17 +120,69 @@ kubectl cluster-info
 
 You are now ready to use `kubectl` with your chosen cluster.
 
+# Step 0: Understanding the Problem Statement
+
+If you are a complete beginner, you might be wondering why we need a tool like FluxCD to manage our Kubernetes cluster.
+This section covers that. If you already have experience with Kubernetes, you can skip this section.
+
+## Let's create a Pod
+
+Let's start with a simple example. We will create a Pod that runs a basic web server.
+
+Create a file named `nginx.yaml` with the following content:
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.14.2
+          ports:
+            - containerPort: 80
+```
+
+Now you can run `kubectl apply -f nginx.yaml` to create the Pod. You can verify that the Pod is running with:
+
+```sh
+kubectl get pods
+```
+
+Let's image you now need to _modify_ your Deployment. You want to change the image to a different version,
+or you want to add an environment variable. Let's say you want to update the image to `nginx:latest`.
+
+The most straightforward way to do this is to edit the `nginx.yaml` file and then again run:
+
+```sh
+kubectl apply -f deployment.yaml
+```
+
+Of course, manually updating your Cluster every time you want to change something is not very efficient.
+This is where GitOps comes into play. Instead of manually applying changes to your cluster, you can store your
+Kubernetes manifests in a Git repository and use a tool like FluxCD to automatically apply those changes to your cluster.
+
+Let's set up FluxCD to manage our cluster.
+
 ## Bootstrapping the cluster with FluxCD
 
 Once your cluster is up and running, you can bootstrap it with FluxCD to enable GitOps-based management.
 
-If the repository `kubernetes-workshop` does _not_ exist, FluxCD will create it for you during the bootstrap process.
-
 Afterward, you can bootstrap FluxCD with the following command:
 
 ```sh
-export $GITHUB_TOKEN=<your-github-token>
-export $GITHUB_USER=<your-github-username>
+export GITHUB_TOKEN=<your-github-token>
+export GITHUB_USER=<your-github-username>
 
 task bootstrap-flux
 
@@ -147,6 +209,23 @@ kubectl get pods -n flux-system
 
 Congratulations! Flux will now continuously reconcile your cluster state with your Git repository. Let's add some stuff!
 
-# Adding functionality
+## Creating and updating an application
 
-...
+In this section, we will create a simple application and deploy it to our cluster using FluxCD.
+In [Section 0](#step-0-understanding-the-problem-statement), we created a Deployment manually.
+Now, let's manage it with FluxCD.
+Delete your original deployment, so we can start fresh. Then move your `nginx.yaml` file to the `clusters/demo`
+directory in your forked repository.
+
+```sh
+kubectl delete deployment nginx-deployment
+mv nginx.yaml clusters/demo/nginx.yaml
+
+# Commit and push the changes
+# Recommended remote structure: `upstream` for the original repository, `origin` for your fork
+git add clusters/demo/nginx.yaml
+git commit -m "Add nginx deployment"
+git push origin main
+```
+
+FluxCD will automatically detect the new file and apply it to your cluster.
